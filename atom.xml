@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Asjid Kalam</title>
+  
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="https://odinshell.github.io/"/>
+  <updated>2020-05-11T19:49:16.696Z</updated>
+  <id>https://odinshell.github.io/</id>
+  
+  <author>
+    <name>Asjid Kalam</name>
+    
+  </author>
+  
+  <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Attacking MongoDB&#39;s ObjectID</title>
+    <link href="https://odinshell.github.io/2020/05/11/Attacking-MongoDB-s-ObjectID/"/>
+    <id>https://odinshell.github.io/2020/05/11/Attacking-MongoDB-s-ObjectID/</id>
+    <published>2020-05-11T14:51:15.000Z</published>
+    <updated>2020-05-11T19:49:16.696Z</updated>
+    
+    <content type="html"><![CDATA[<p>Capture the Flag or more commonly known as CTF is a sort of firing range for hackers where they can test their skills and pick up a few new tricks , I personally believe that its a great way to keep you sharp and intrigued to learn new stuff.<br>Recently I attended a CTF conducted by NIT Calicut, It was a fun CTF with almost all Riddle-like challenges. In this post i’ll be describing how i solved a particular challenge from it.</p><h5 id="What-are-these-ID’s"><a href="#What-are-these-ID’s" class="headerlink" title="What are these ID’s?"></a>What are these ID’s?</h5><p><em>Category: Web</em></p><p>The challenge starts off with this <a href="https://frozen-bayou-33918.herokuapp.com/" target="_blank" rel="noopener">link</a>. We’re given a few Valid and Deprecated IDs. On further Googling, I found out that they are MongoDB ObjectIDs used to represent data in MongoDB.</p><p><img src="/2020/05/11/Attacking-MongoDB-s-ObjectID/mongoid-1.PNG" alt="MongoDB ID&#39;s"></p><p>And the page source gave nothing useful other than a comment implying the <code>_id</code> should be used for some-kind of auth.</p><p><img src="/2020/05/11/Attacking-MongoDB-s-ObjectID/mongoid-2.PNG" alt="Page Source"></p><p>First the all, the challenge doesn’t need any sort of authentication, so the comment is a little misleading. There was <code>/log.html</code> with some log data and timestamp, It had the ‘Added flag’ as it’s fourth entry and we had only 3 valid IDs. So it was clear that there was something to do with these timestamps.</p><p><img src="/2020/05/11/Attacking-MongoDB-s-ObjectID/mongoid-3.PNG" alt="log.html"></p><p>On MongoDB’s <a href="https://docs.mongodb.com/manual/reference/method/ObjectId/" target="_blank" rel="noopener">documentation</a>, it was clear that the ObjectID could be reproduced by finding the exact 12-bytes.</p><blockquote><p>The 12-byte ObjectId value consists of:</p><ul><li>a 4-byte timestamp value, representing the ObjectId’s creation, measured in seconds since the Unix epoch</li><li>a 5-byte random value</li><li>a 3-byte incrementing counter, initialized to a random value</li></ul></blockquote><p>In our case, the first 4-byte values could be reproduced since we have the exact timestamp of the Object’s entry. I used <a href="https://steveridout.github.io/mongo-object-time/" target="_blank" rel="noopener">this</a> website to convert the timestamp of ‘Added Flag’ to epoch.<br>First 4-bytes -&gt; <code>5eaaa5ff0000000000000000</code></p><p>On looking closely at the given valid IDs, the second 5 bytes are same on all three entries, i.e <code>0464695443</code><br>Timestamp + 5-byte random value -&gt; <code>5eaaa5ff0464695443000000</code> </p><p>The last 3 bytes are the incrementing counter, on checking the valid ID’s final bytes, we could find a pattern</p><blockquote><p>5ea57c1f04646954437af2be<br>5ea705df04646954437af2bf<br>5ea7f4ef04646954437af2c1</p></blockquote><p><code>be</code>, <code>bf</code> and <code>c1</code>. It follows a pattern from <code>a1</code> to <code>af</code> and change to <code>b1</code>. So i was pretty sure that the next incremented value would be <code>c2</code>.<br>Final ID: <code>5eaaa5ff04646954437af2c2</code></p><p>So on senting a GET requests to <code>/?_id</code> with the ID,<br><img src="/2020/05/11/Attacking-MongoDB-s-ObjectID/mongoid-4.PNG" alt="flag"></p><p>We get a reponse with the flag. </p><blockquote><p>ieee_nitc{53cRet_b3hInd_M0ng0}</p></blockquote>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;Capture the Flag or more commonly known as CTF is a sort of firing range for hackers where they can test their skills and pick up a few n
+      
+    
+    </summary>
+    
+    
+    
+  </entry>
+  
+</feed>

@@ -1,0 +1,49 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="index, follow"><title>Attacking MongoDB's ObjectID • Asjid Kalam</title><meta name="description" content="Attacking MongoDB's ObjectID - Asjid Kalam"><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/css/nanoreset.min.css"><link rel="stylesheet" href="/css/theme.css"><link rel="search" type="application/opensearchdescription+xml" href="/atom.xml" title="Asjid Kalam"><meta name="theme-color" content="#222831"><meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="Asjid Kalam" type="application/atom+xml">
+</head><body><div class="wrap" id="barba-wrapper"><header><h1 class="branding"><a href="/" title="Asjid Kalam">Asjid Kalam</a></h1><ul class="nav nav-list"><li class="nav-list-item"><a class="nav-list-link no-barba" href="/" target="_self">HOME</a></li><li class="nav-list-item"><a class="nav-list-link no-barba" href="/about" target="_self">ABOUT</a></li><li class="nav-list-item"><a class="nav-list-link no-barba" href="/archives" target="_self">ARCHIVES</a></li><li class="nav-list-item"><a class="nav-list-link no-barba" href="https://github.com/Asjidkalam" target="_blank">GITHUB</a></li></ul></header><div class="barba-container"><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">Attacking MongoDB's ObjectID</h1><div class="post-info"><a></a>Monday, May 11th 2020</div><div class="post-content"><p>Capture the Flag or more commonly known as CTF is a sort of firing range for hackers where they can test their skills and pick up a few new tricks , I personally believe that its a great way to keep you sharp and intrigued to learn new stuff.<br>Recently I attended a CTF conducted by NIT Calicut, It was a fun CTF with almost all Riddle-like challenges. In this post i’ll be describing how i solved a particular challenge from it.</p>
+<h5 id="What-are-these-ID’s"><a href="#What-are-these-ID’s" class="headerlink" title="What are these ID’s?"></a>What are these ID’s?</h5><p><em>Category: Web</em></p>
+<p>The challenge starts off with this <a href="https://frozen-bayou-33918.herokuapp.com/" target="_blank" rel="noopener">link</a>. We’re given a few Valid and Deprecated IDs. On further Googling, I found out that they are MongoDB ObjectIDs used to represent data in MongoDB.</p>
+<p><img src="/2020/05/11/Attacking-MongoDB-s-ObjectID/mongoid-1.PNG" alt="MongoDB ID&#39;s"></p>
+<p>And the page source gave nothing useful other than a comment implying the <code>_id</code> should be used for some-kind of auth.</p>
+<p><img src="/2020/05/11/Attacking-MongoDB-s-ObjectID/mongoid-2.PNG" alt="Page Source"></p>
+<p>First the all, the challenge doesn’t need any sort of authentication, so the comment is a little misleading. There was <code>/log.html</code> with some log data and timestamp, It had the ‘Added flag’ as it’s fourth entry and we had only 3 valid IDs. So it was clear that there was something to do with these timestamps.</p>
+<p><img src="/2020/05/11/Attacking-MongoDB-s-ObjectID/mongoid-3.PNG" alt="log.html"></p>
+<p>On MongoDB’s <a href="https://docs.mongodb.com/manual/reference/method/ObjectId/" target="_blank" rel="noopener">documentation</a>, it was clear that the ObjectID could be reproduced by finding the exact 12-bytes.</p>
+<blockquote>
+<p>The 12-byte ObjectId value consists of:</p>
+<ul>
+<li>a 4-byte timestamp value, representing the ObjectId’s creation, measured in seconds since the Unix epoch</li>
+<li>a 5-byte random value</li>
+<li>a 3-byte incrementing counter, initialized to a random value</li>
+</ul>
+</blockquote>
+<p>In our case, the first 4-byte values could be reproduced since we have the exact timestamp of the Object’s entry. I used <a href="https://steveridout.github.io/mongo-object-time/" target="_blank" rel="noopener">this</a> website to convert the timestamp of ‘Added Flag’ to epoch.<br>First 4-bytes -&gt; <code>5eaaa5ff0000000000000000</code></p>
+<p>On looking closely at the given valid IDs, the second 5 bytes are same on all three entries, i.e <code>0464695443</code><br>Timestamp + 5-byte random value -&gt; <code>5eaaa5ff0464695443000000</code> </p>
+<p>The last 3 bytes are the incrementing counter, on checking the valid ID’s final bytes, we could find a pattern</p>
+<blockquote>
+<p>5ea57c1f04646954437af2be<br>5ea705df04646954437af2bf<br>5ea7f4ef04646954437af2c1</p>
+</blockquote>
+<p><code>be</code>, <code>bf</code> and <code>c1</code>. It follows a pattern from <code>a1</code> to <code>af</code> and change to <code>b1</code>. So i was pretty sure that the next incremented value would be <code>c2</code>.<br>Final ID: <code>5eaaa5ff04646954437af2c2</code></p>
+<p>So on senting a GET requests to <code>/?_id</code> with the ID,<br><img src="/2020/05/11/Attacking-MongoDB-s-ObjectID/mongoid-4.PNG" alt="flag"></p>
+<p>We get a reponse with the flag. </p>
+<blockquote>
+<p>ieee_nitc{53cRet_b3hInd_M0ng0}</p>
+</blockquote>
+</div></article></div></main><footer><div class="paginator"></div><div id="disqus_thread"></div><script>var disqus_shortname = 'asjidkalam';
+var disqus_identifier = '2020/05/11/Attacking-MongoDB-s-ObjectID/';
+var disqus_title = 'Attacking MongoDB's ObjectID';
+var disqus_url = 'https://odinshell.github.io/2020/05/11/Attacking-MongoDB-s-ObjectID/';
+(function () {
+    var dsq = document.createElement('script'); dsq.async = true;
+    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//asjidkalam.disqus.com/count.js" async></script><div class="copyright"><br>Made with ❤️ by <a href="https://twitter.com/odinshell" rel="noreferrer" target="_blank">Asjid Kalam</a></div></footer></div></div><script>var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-42903213-1']);
+_gaq.push(['_trackPageview']);
+
+(function () {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();</script><script src="https://cdnjs.cloudflare.com/ajax/libs/barba.js/1.0.0/barba.min.js"></script><script>document.addEventListener('DOMContentLoaded', function() {
+    Barba.Pjax.start()
+})</script></body></html>
