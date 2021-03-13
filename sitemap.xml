@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://odinshell.github.io/2021/03/13/Prototype-Pollution-to-Command-Injection/</loc>
+    
+    <lastmod>2021-03-13T17:16:59.931Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://odinshell.github.io/2020/11/15/f-g-h-A-Pathfinding/</loc>
     
     <lastmod>2020-11-15T10:34:17.164Z</lastmod>
